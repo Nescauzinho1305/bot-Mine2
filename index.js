@@ -8,7 +8,7 @@ function startBot() {
   const bot = mineflayer.createBot({
     host: 'Pedro1312111.aternos.me',
     port: 43898,
-    username: 'BotServ',
+    username: 'BotServ2',
     version: false
   });
 
