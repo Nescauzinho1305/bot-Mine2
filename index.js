@@ -8,7 +8,7 @@ function startBot() {
   const bot = mineflayer.createBot({
     host: 'Pedro1312111.aternos.me',
     port: 43898,
-    username: 'BotServ2',
+    username: 'BotServ',
     version: false
   });
 
@@ -25,15 +25,15 @@ function startBot() {
   });
 
   function reconnect(reason = '') {
-    if (!isReconnecting) {
-      isReconnecting = true;
-      console.log(`🔁 Reconectando... Motivo: ${reason}`);
-      setTimeout(() => {
-        startBot();
-        isReconnecting = false;
-      }, 5000); // tempo para evitar reconexão rápida demais
-    }
+  if (!isReconnecting) {
+    isReconnecting = true;
+    console.log(`🔁 Reconectando em 5 segundos... Motivo: ${reason}`);
+    setTimeout(() => {
+      startBot();
+      isReconnecting = false;
+    }, 5000); // reconecta em 5 segundos
   }
+}
 
   bot.on('end', () => {
     console.log('🔌 Bot foi desconectado.');
