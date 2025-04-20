@@ -3,8 +3,11 @@ const express = require('express');
 const app = express();
 
 let isReconnecting = false;
+let botInstance;
 
 function startBot() {
+  if (botInstance) return;
+
   const bot = mineflayer.createBot({
     host: 'Pedro1312111.aternos.me',
     port: 43898,
@@ -12,51 +15,66 @@ function startBot() {
     version: false
   });
 
-  let jumpInterval;
+  botInstance = bot;
+
+  const directions = ['forward', 'back', 'left', 'right'];
+  let activityInterval;
 
   bot.on('spawn', () => {
     console.log(`✅ Bot entrou no servidor como ${bot.username}`);
 
-    // Atividade para não ser kickado por inatividade
-    jumpInterval = setInterval(() => {
-      bot.setControlState('jump', true);
-      setTimeout(() => bot.setControlState('jump', false), 500);
-    }, 5000);
+    // Anti-AFK: movimento e pulo aleatórios
+    activityInterval = setInterval(() => {
+      const direction = directions[Math.floor(Math.random() * directions.length)];
+      bot.setControlState(direction, true);
+
+      if (Math.random() > 0.5 && bot.entity.onGround) {
+        bot.setControlState('jump', true);
+        setTimeout(() => bot.setControlState('jump', false), 500);
+      }
+
+      setTimeout(() => {
+        bot.clearControlStates();
+      }, 1500); // para após 1.5s
+    }, 60000); // a cada 60s
   });
 
   function reconnect(reason = '') {
-  if (!isReconnecting) {
-    isReconnecting = true;
-    console.log(`🔁 Reconectando em 5 segundos... Motivo: ${reason}`);
-    setTimeout(() => {
-      startBot();
-      isReconnecting = false;
-    }, 5000); // reconecta em 5 segundos
+    if (!isReconnecting) {
+      isReconnecting = true;
+      console.log(`🔁 Reconectando em 5 segundos... Motivo: ${reason}`);
+      setTimeout(() => {
+        botInstance = null;
+        startBot();
+        isReconnecting = false;
+      }, 5000);
+    }
   }
-}
 
   bot.on('end', () => {
     console.log('🔌 Bot foi desconectado.');
-    clearInterval(jumpInterval);
+    clearInterval(activityInterval);
     reconnect('Desconectado');
   });
 
   bot.on('error', (err) => {
-    console.log('❌ Erro no bot:', err.code || err.message);
+    console.log('❌ Erro no bot:', err);
+    clearInterval(activityInterval);
     reconnect('Erro');
   });
 
   bot.on('kicked', (reason) => {
     console.log('⚠️ Bot foi kickado:', reason);
+    clearInterval(activityInterval);
     reconnect('Kickado');
   });
 }
 
 startBot();
 
-// Servidor express para manter bot ativo em hosts grátis
+// Servidor express para manter o processo ativo
 app.get('/', (req, res) => {
-  res.send('🤖 Bot está online e reconecta instantaneamente!');
+  res.send('🤖 Bot está online e com anti-AFK avançado!');
 });
 
 const PORT = process.env.PORT || 3000;
